@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 <uses-permission android:name="android.permission.BATTERY_STATS"
     tools:ignore="ProtectedPermissions"></uses-permission>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"></uses-permission>
     <application
         android:allowBackup="true"
@@ -13,6 +15,7 @@
         android:roundIcon="@mipmap/bellring"
         android:supportsRtl="true"
         android:theme="@style/Theme.Alarm"
+
         tools:targetApi="20">
         <activity
             android:name=".MainActivity"
@@ -27,6 +30,15 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
+        <receiver
+            android:name=".App"
+            android:exported="true"
+            tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"></action>
+            </intent-filter>
+        </receiver>
+        <service android:name=".MyForegroundService"></service>
     </application>
 
 </manifest>
