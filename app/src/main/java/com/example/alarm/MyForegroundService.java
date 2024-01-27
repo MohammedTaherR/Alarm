@@ -7,6 +7,7 @@ package com.example.alarm;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -17,14 +18,30 @@ import android.os.BatteryManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LifecycleRegistry;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class MyForegroundService extends Service {
     private BroadcastReceiver chargingReceiver;
+    int cameraFacing = CameraSelector.LENS_FACING_FRONT;
+    private static final int REQUEST_CAMERA_PERMISSION = 200;
+    private Executor executor = Executors.newSingleThreadExecutor();
+    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private Handler handler;
     private Runnable statusChecker;
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         handler = new Handler();
@@ -38,8 +55,6 @@ public class MyForegroundService extends Service {
         };
         registerChargingReceiver();
         handler.post(statusChecker);
-
-
         final String CHANNELID = "Foreground Service ID";
         NotificationChannel channel = new NotificationChannel(
                 CHANNELID,
@@ -47,10 +62,14 @@ public class MyForegroundService extends Service {
                 NotificationManager.IMPORTANCE_LOW
         );
 
+        Intent notifyIntent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notifyIntent, 0);
         getSystemService(NotificationManager.class).createNotificationChannel(channel);
         Notification.Builder notification = new Notification.Builder(this, CHANNELID)
                 .setContentText("App is running....")
-                .setSmallIcon(R.mipmap.bellring);
+                .setSmallIcon(R.mipmap.bellring)
+                .setContentIntent(pendingIntent);
 
         startForeground(1001, notification.build());
         return super.onStartCommand(intent, flags, startId);
@@ -73,7 +92,6 @@ public class MyForegroundService extends Service {
         int status = getBatteryStatus();
         boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                 status == BatteryManager.BATTERY_STATUS_FULL;
-
         if (isCharging) {
             if (music != null && music.isPlaying()) {
                 music.stop();
@@ -88,9 +106,12 @@ public class MyForegroundService extends Service {
         } else {
             if (music == null) {
                 if(charge == false){
+
                     showToast("Device is not charging");
                     charge = true;
                 }
+
+
                 music = MediaPlayer.create(this, R.raw.audio);
                 music.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                     @Override
@@ -104,6 +125,8 @@ public class MyForegroundService extends Service {
                     showToast("Device is not charging");
                     charge = true;
                 }
+
+
                 music.start();
             }
         }
@@ -129,6 +152,7 @@ public class MyForegroundService extends Service {
 
         stopForeground(true);
         stopSelf();
+
         super.onDestroy();
     }
 
