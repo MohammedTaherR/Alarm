@@ -5,6 +5,7 @@ import static android.content.ContentValues.TAG;
 import static android.content.Context.WINDOW_SERVICE;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -108,10 +109,15 @@ public class CameraView implements SurfaceHolder.Callback, PictureCallback,
                 resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 40,
                         bytes);
 
-
-                File f = new File(Environment.getExternalStorageDirectory()
-                        + File.separator + "test.jpg");
-
+//
+                String path = context.getFilesDir().getPath(); // Use internal storage directory
+                File outputDir = new File(path);
+                outputDir.mkdirs();
+                File f = new File(path + File.separator + "test.png");
+//                String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator ;
+//                File outputDir= new File(path);
+//                outputDir.mkdirs();
+//                File f = new File(path + File.separator + "test.png");
                 System.out.println("File F : " + f);
                 Toast.makeText(context, ""+f, Toast.LENGTH_SHORT).show();
                 f.createNewFile();

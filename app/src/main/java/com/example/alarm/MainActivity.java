@@ -5,6 +5,7 @@ import android.Manifest;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -24,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver chargingReceiver;
     private Handler handler;
     private Runnable statusChecker;
+//    public ContextWrapper cw = new ContextWrapper(getApplicationContext());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         }
+
         return false;
     }public void checkDrawOverlayPermission(Context context) {
         // check if we already  have permission to draw over other apps
