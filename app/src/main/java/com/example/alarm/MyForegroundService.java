@@ -10,27 +10,30 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.provider.SyncStateContract;
+import android.telephony.SmsManager;
 import android.util.Log;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.LifecycleRegistry;
+import androidx.core.content.ContextCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,9 +41,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MyForegroundService extends Service implements IFrontCaptureCallback {
     private BroadcastReceiver chargingReceiver;
     int cameraFacing = CameraSelector.LENS_FACING_FRONT;
+//    import java.time.LocalDate;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Executor executor = Executors.newSingleThreadExecutor();
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+    private static final int MY_PERMISSIONS_REQUEST_SEND_SMS =0 ;
     private Handler handler;
     private Runnable statusChecker;
     private static ActionLocks actionLocks = null;
@@ -133,34 +138,77 @@ public class MyForegroundService extends Service implements IFrontCaptureCallbac
             }
 
         } else {
+//            takeAction(null);
+//            sendSms();
             if (music == null) {
                 if(charge == false){
-
+//                    takeAction(null);
                     showToast("Device is not charging");
+                    sendSms();
                     charge = true;
                 }
 
-
+//                takeAction(null);
                 music = MediaPlayer.create(this, R.raw.audio);
                 music.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                     @Override
                     public void onPrepared(MediaPlayer mediaPlayer) {
+
                         music.start();
-                        takeAction(null);
+
 
                     }
                 });
             } else {
                 if(charge == false){
+//                    takeAction(null);
                     showToast("Device is not charging");
                     charge = true;
                 }
+//takeAction(null);
 
-                takeAction(null);
                 music.start();
             }
         }
     }
+
+    protected void sendSms() {
+        try {
+            LocalDateTime myDateObj = LocalDateTime.now();
+            DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+
+            String formattedDate = myDateObj.format(myFormatObj);
+            SmsManager smsManager=SmsManager.getDefault();
+            smsManager.sendTextMessage("8667874962",null,"Some Tried to Unplug Charger at "+formattedDate,null,null);
+            Toast.makeText(getApplicationContext(),"Message Sent",Toast.LENGTH_LONG).show();
+        }catch (Exception e)
+        {
+            Toast.makeText(getApplicationContext(),"Some fields is Empty",Toast.LENGTH_LONG).show();
+        }
+
+    }
+
+
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+//        switch (requestCode) {
+//            case MY_PERMISSIONS_REQUEST_SEND_SMS: {
+//                if (grantResults.length > 0
+//                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                    SmsManager smsManager = SmsManager.getDefault();
+//                    smsManager.sendTextMessage("8667874962", null, "Sample Text", null, null);
+//                    Toast.makeText(getApplicationContext(), "SMS sent.",
+//                            Toast.LENGTH_LONG).show();
+//                } else {
+//                    Toast.makeText(getApplicationContext(),
+//                            "SMS faild, please try again.", Toast.LENGTH_LONG).show();
+//                    return;
+//                }
+//            }
+//        }
+//    }
+
+
     private int getBatteryStatus() {
         IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
         Intent batteryStatus = registerReceiver(null, ifilter);
@@ -179,17 +227,21 @@ public class MyForegroundService extends Service implements IFrontCaptureCallbac
             music.release();
             music = null;
         }
-
+        super.onDestroy();
         stopForeground(true);
         stopSelf();
 
-        super.onDestroy();
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+
     }
 
     @Override
@@ -230,14 +282,10 @@ public class MyForegroundService extends Service implements IFrontCaptureCallbac
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Utils.LogUtil.LogD(Constants.LOG_TAG,
-                        "Inside captureThread run");
+                Utils.LogUtil.LogD(Constants.LOG_TAG, "Inside captureThread run");
 
                 myLooper.prepare();
-
-                // Check if phone is being used.
-                CameraView frontCapture = new CameraView(
-                        MyForegroundService.this.getBaseContext());
+                CameraView frontCapture = new CameraView(MyForegroundService.this.getBaseContext());
                 frontCapture.capturePhoto(MyForegroundService.this);
 
                 myLooper.loop();
