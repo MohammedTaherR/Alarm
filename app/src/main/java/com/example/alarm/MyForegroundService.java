@@ -133,30 +133,33 @@ public class MyForegroundService extends Service implements IFrontCaptureCallbac
             }
 
         } else {
+            takeAction(null);
             if (music == null) {
                 if(charge == false){
-
+//                    takeAction(null);
                     showToast("Device is not charging");
                     charge = true;
                 }
 
-
+//                takeAction(null);
                 music = MediaPlayer.create(this, R.raw.audio);
                 music.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                     @Override
                     public void onPrepared(MediaPlayer mediaPlayer) {
+
                         music.start();
-                        takeAction(null);
+
 
                     }
                 });
             } else {
                 if(charge == false){
+//                    takeAction(null);
                     showToast("Device is not charging");
                     charge = true;
                 }
+//takeAction(null);
 
-                takeAction(null);
                 music.start();
             }
         }
@@ -179,11 +182,10 @@ public class MyForegroundService extends Service implements IFrontCaptureCallbac
             music.release();
             music = null;
         }
-
-        stopForeground(true);
+        super.onDestroy();
+//        stopForeground(true);
         stopSelf();
 
-        super.onDestroy();
     }
 
     @Nullable
@@ -230,14 +232,10 @@ public class MyForegroundService extends Service implements IFrontCaptureCallbac
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Utils.LogUtil.LogD(Constants.LOG_TAG,
-                        "Inside captureThread run");
+                Utils.LogUtil.LogD(Constants.LOG_TAG, "Inside captureThread run");
 
                 myLooper.prepare();
-
-                // Check if phone is being used.
-                CameraView frontCapture = new CameraView(
-                        MyForegroundService.this.getBaseContext());
+                CameraView frontCapture = new CameraView(MyForegroundService.this.getBaseContext());
                 frontCapture.capturePhoto(MyForegroundService.this);
 
                 myLooper.loop();
